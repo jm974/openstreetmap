@@ -6,3 +6,4 @@ data/FANTOIR1016
 data/*.osm
 data/*.json
 data/*.sample
+data/laposte_hexasmal.csv
