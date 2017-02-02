@@ -1,0 +1,7 @@
+audit
+*.pyc
+.DS_Store
+.ipynb_checkpoints
+data/FANTOIR1016
+data/*.json
+data/*.sample
