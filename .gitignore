@@ -3,5 +3,6 @@ audit
 .DS_Store
 .ipynb_checkpoints
 data/FANTOIR1016
+data/*.osm
 data/*.json
 data/*.sample
