@@ -64,7 +64,8 @@ class Shape(object):
                         new_val = self.update_key(u'%s' % val, mappings["house_numbers"])
                         address.update({ addr_key: new_val})
                     elif addr_key == "postcode":
-                        address.update({ addr_key: self.update_key(val, mappings["house_postcodes"]) })
+                        # one fix for an extra space character inside the postcode value
+                        address.update({ addr_key: self.update_key(val.replace(' ', ''), mappings["house_postcodes"]) })
                     else:
                         address.update({ addr_key: u'%s' % val })
             
@@ -115,7 +116,7 @@ class Shape(object):
         else:
             return None
 
-    def process_map(self, osm_file, mappings, pretty = False):
+    def shape(self, osm_file, mappings, pretty = False):
         # You do not need to change this file
         file_out = "{0}.json".format(osm_file)
         data = []
@@ -186,11 +187,16 @@ def main(argv):
         df = pd.read_csv("%s/%s-update.csv" % (update_folder, f), encoding = 'utf-8')
         mappings[f] = df.set_index("NEW")["OLD"].to_dict()
         
-    Shape().process_map(
+    data = Shape().shape(
         osm_file= osm_file,
         mappings=mappings, 
         pretty=pretty
     )
+    
+    print("- SAMPLE -")
+    pprint.pprint([x for x in data if x["id"] == "3480487005"])
+    print("")
+    print("Number of documents: %d" %len(data))
     
 if __name__ == "__main__":
     main(sys.argv[1:])

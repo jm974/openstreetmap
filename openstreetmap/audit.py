@@ -148,11 +148,11 @@ class Audit(object):
                         house_numbers[house_number].add(house_number)
     
     def audit_house_postcode(self, house_postcodes, house_postcode, expected_postal_code):
-        if self.POSTCODE_RE.match(house_postcode) is None or not house_postcode in expected_postal_code:
+        if self.POSTCODE_RE.match(house_postcode) is None or not int(house_postcode) in expected_postal_code:
             house_postcodes[house_postcode].add(house_postcode)
     
     def audit_postal_code(self, postal_codes, postal_code, expected_postal_code):
-        if self.POSTCODE_RE.match(postal_code) is None or not postal_code in expected_postal_code:
+        if self.POSTCODE_RE.match(postal_code) is None or not int(postal_code) in expected_postal_code:
             postal_codes[postal_code].add(postal_code)
     
     def audit_population(self, populations, population):
@@ -174,7 +174,6 @@ class Audit(object):
     def audit_phone(self, phones, phone):
         if self.PHONE_RE.match(phone) is None:
             phones[phone].add(phone)
-    
     
     def audit_way_node(self, osm_file, expected_way_type, expected_way_name, expected_postal_code, expected_city):
         cities = defaultdict(set)
@@ -235,36 +234,39 @@ class Audit(object):
               init_mapping= False
              ):
         db = fantoir.FANTOIR()
-        postcodes = postalcode.PostalCode()
+        postcodes = postalcode.PostalCode("data/laposte_hexasmal.csv")
         
         results = self.audit_way_node(
             osm_file, 
             db.way_types().TYPE_NAME.values,
             db.ways(fantoir_file, area_code).NAME.values,
-            postcodes.postcodeByLocality().keys(),
-            postcodes.cityByPostcode().keys()
+            postcodes.localityByPostcode().keys(),
+            postcodes.postcodeByLocality().keys()
         )
 
-        if init_mapping or verbose:
-            for k, v in results.items():
-                if init_mapping:
-                    """Generate mapping file to be updated for manual data cleansing"""
-                    if len(v):
-                        mapping = [value for nested in v.values() for value in nested]
-                        df = pd.DataFrame.from_dict({ "OLD": mapping, "NEW": mapping })
-                        df.to_csv("%s/%s-update.csv" % (update_folder, k), 
-                                  encoding='utf-8', 
-                                  index=False, 
-                                  quoting=csv.QUOTE_ALL)
-                    """Once updated, the files shall be manually transferred to update folder"""
-                if verbose:
-                    print("++++++ AUDIT %s ++++++" %k)
-                    pprint.pprint(dict(v))
-                    print("")
-
+        summary = {}
+        for k, v in results.items():
+            if init_mapping:
+                """Generate mapping file to be updated for manual data cleansing
+                Once updated, the files shall be manually transferred to update folder"""
+                if len(v):
+                    mapping = [value for nested in v.values() for value in nested]
+                    df = pd.DataFrame.from_dict({ "OLD": mapping, "NEW": mapping })
+                    df.to_csv("%s/%s-update.csv" % (update_folder, k), 
+                              encoding='utf-8', 
+                              index=False, 
+                              quoting=csv.QUOTE_ALL)
+                
+            if verbose:
+                pprint.pprint(dict(v))
+                print("")
+            
+            summary[k] = len(v)
+                
+        return pprint.pprint(summary) # use daframe formatting
 
 def usage():
-    print 'audit.py -i -v -o <OSM FILE> -f <FANTOIR FILE> -a <AREA> -u <AUDIT FOLDER>'
+    print('audit.py -i -v -o <OSM FILE> -f <FANTOIR FILE> -a <AREA> -u <AUDIT FOLDER>')
 
 def main(argv):
     verbose = False
